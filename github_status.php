@@ -16,9 +16,26 @@ Author URI: http://www.ganglio.eu/home
 require_once("gitHub.php");
 
 function github_status() {
-
 	$options = get_option('widget_github_status');
 	
+	$gh=new gitHub($options["username"]);
+	$comms=$gh->getFlatCommits();
+	$zebra=0;
+	echo "<div class='github_status'>";
+	if ($comms) {
+		$comms=array_slice($comms,0,$options["number"],TRUE);
+		foreach ($comms as $ts=>$comm)
+			echo 
+			"<div class='commit ".($zebra++%2==0?"even":"odd")."'>
+				<div class='repo'><a href='http://github.com/".$options["username"]."/".$comm["repo"]."' taregt='_blank'>".$comm["repo"]."</a></div>
+				<div class='message'>".$comm["message"]."</div>
+				<div class='info'>
+					<div class='author'>".$comm["author"]."</div>
+					<div class='time'>".date("d/m/Y H:i",$ts)."</div>
+				</div>
+			</div>";
+	}
+	echo "</div>";
 }
 
 function github_status_widget($args) {
@@ -44,8 +61,8 @@ function github_status_widget_register() {
 	if ( !is_blog_installed() )
 		return;
 	$widget_ops = array('classname' => 'github_status_widget', 'description' => __( "github Activity Widget") );
-	wp_register_sidebar_widget('github_status', __('Last Scrobbled'), 'github_status_widget', $widget_ops);
-	wp_register_widget_control('github_status', __('Last Scrobbled', 'github_status_widget'), 'github_status_widget_control' );
+	wp_register_sidebar_widget('github_status', __('github Activity'), 'github_status_widget', $widget_ops);
+	wp_register_widget_control('github_status', __('github Activity', 'github_status_widget'), 'github_status_widget_control' );
 	if ( is_active_widget('github_status_widget') ) {
 		add_action('wp_head', 'github_status_css');
 	}
@@ -58,26 +75,56 @@ function github_status_css() {
 	echo "
 	<style type='text/css'>
 	.github_status {
-		position: relative;
-		font-family: monospace, monospace;
 		color: #999999;
-		text-align: center;
+		margin-top:3px;
 	}
 	
-	.github_status .artist,
-	.github_status .title,
-	.github_status .album {
-		text-align: left;
+	.github_status .commit {
+		margin-bottom: 5px;
+		padding: 0 5px;
 	}
 	
-	.github_status .title {
+	.github_status .commit.even {
+		background: #ffffff;
+		-moz-border-radius: 5px 0 0 5px;
+		-webkit-border-radius: 5px 0 0 5px;
+		border-radius: 5px 0 0 5px;
+	}
+	
+	.github_status .commit.odd {
+		background: #f5f5f5;
+		-moz-border-radius: 0 5px 5px 0;
+		-webkit-border-radius: 0 5px 5px 0;
+		border-radius: 0 5px 5px 0;
+	}
+	
+	.github_status .info {
+		position: relative;
+		height: 10px
+	}
+	
+	.github_status .author {
 		color: #555555;
-		font-size: 1.05em;
+		font-size: 8px;
+		left: 0;
+		position: absolute;
+		top: 0;
 	}
 	
-	.github_status .date {
-		text-align: right;
+	.github_status .time {
+		color: #555555;
 		font-size: 8px;
+		right: 0;
+		position: absolute;
+		top: 0;
+	}
+	
+	.github_status .message {
+		font-size:12px;
+		line-height: 16px;
+	}
+	
+	.github_status .repo {
 	}
 	</style>
 	";
